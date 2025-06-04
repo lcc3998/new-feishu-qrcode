@@ -69,7 +69,7 @@
 </head>
 <body>
   <div id="container">
-    <h2>驴崽x哈罗码上租车</h2>
+    <h2>驴崽 x 哈啰租电动车</h2>
     <div id="plate">加载中...</div>
     <div id="qrcode"></div>
     <div id="tip">支付宝扫码可免押</div>
@@ -78,65 +78,71 @@
 
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
   <script>
-  const plateEl = document.getElementById("plate");
-  const qrcodeEl = document.getElementById("qrcode");
-  const progressBar = document.querySelector(".progress-bar");
+    const plateEl = document.getElementById("plate");
+    const qrcodeEl = document.getElementById("qrcode");
+    const progressBar = document.querySelector(".progress-bar");
 
-  let cars = [];
-  let currentIndex = 0;
-  let intervalId;
+    let cars = [];
+    let currentIndex = 0;
+    let switchIntervalId = null;
+    let fetchIntervalId = null;
 
-  async function fetchCars() {
-    try {
-      const res = await fetch("/api/vehicle");
-      const json = await res.json();
+    async function fetchCars() {
+      try {
+        const res = await fetch("/api/vehicle?status=空闲中");
+        const json = await res.json();
 
-      // ✅ 正确提取接口中的 fields 并筛选空闲车辆
-      cars = json?.data?.items
-        .map(item => item.fields)
-        .filter(car => car?.状态 === "空闲中") || [];
+        cars = json?.data?.items.map(item => item.fields) || [];
 
-      if (cars.length === 0) {
-        plateEl.textContent = "暂无空闲车辆";
-        qrcodeEl.innerHTML = "";
-        progressBar.style.display = "none";
-        return;
-      }
+        if (cars.length === 0) {
+          plateEl.textContent = "暂无空闲车辆";
+          qrcodeEl.innerHTML = "";
+          progressBar.style.display = "none";
+          clearInterval(switchIntervalId);
+          return;
+        }
 
-      showCar(cars[currentIndex]);
-
-      if (intervalId) clearInterval(intervalId);
-      intervalId = setInterval(() => {
-        currentIndex = (currentIndex + 1) % cars.length;
-        restartProgressBar();
+        currentIndex = 0;
         showCar(cars[currentIndex]);
-      }, 10000);
+        restartProgressBar();
 
-    } catch (err) {
-      plateEl.textContent = "获取数据失败";
-      qrcodeEl.innerHTML = "";
-      console.error(err);
+        clearInterval(switchIntervalId);
+        switchIntervalId = setInterval(() => {
+          currentIndex = (currentIndex + 1) % cars.length;
+          restartProgressBar();
+          showCar(cars[currentIndex]);
+        }, 10000);
+      } catch (err) {
+        plateEl.textContent = "获取数据失败";
+        qrcodeEl.innerHTML = "";
+        console.error(err);
+      }
     }
-  }
 
-  function showCar(car) {
-    plateEl.textContent = "车牌号：" + car.车牌;
-    qrcodeEl.innerHTML = "";
-    new QRCode(qrcodeEl, {
-      text: car.二维码,
-      width: 200,
-      height: 200
-    });
-  }
+    function showCar(car) {
+      plateEl.textContent = "车牌号：" + car.车牌;
+      qrcodeEl.innerHTML = "";
+      new QRCode(qrcodeEl, {
+        text: car.二维码,
+        width: 200,
+        height: 200
+      });
+    }
 
-  function restartProgressBar() {
-    progressBar.style.animation = "none";
-    void progressBar.offsetWidth; // 强制重新渲染
-    progressBar.style.animation = "countdown 10s linear infinite";
-  }
+    function restartProgressBar() {
+      progressBar.style.display = "block";
+      progressBar.style.animation = "none";
+      void progressBar.offsetWidth; // 触发重绘
+      progressBar.style.animation = "countdown 10s linear infinite";
+    }
 
-  fetchCars();
-</script>
+    // 初始加载
+    fetchCars();
 
+    // 每30秒自动刷新数据
+    fetchIntervalId = setInterval(() => {
+      fetchCars();
+    }, 30000);
+  </script>
 </body>
 </html>
