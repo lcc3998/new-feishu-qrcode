@@ -1,23 +1,49 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-  <meta charset="UTF-8" />
-  <title>飞书二维码查询</title>
-</head>
-<body>
-  <h1>车辆二维码数据</h1>
-  <div id="app">加载中...</div>
+import { useEffect, useState } from "react";
+import QRCode from "qrcode.react";
 
-  <script>
-    fetch('/api/vehicle')
-      .then(res => res.json())
-      .then(data => {
-        const div = document.getElementById('app');
-        div.innerHTML = JSON.stringify(data, null, 2);
-      })
-      .catch(err => {
-        document.getElementById('app').innerText = '加载失败：' + err.message;
-      });
-  </script>
-</body>
-</html>
+export default function CarDisplay() {
+  const [cars, setCars] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // 获取数据
+  const fetchCars = async () => {
+    try {
+      const res = await fetch("/api/feishu"); // 确保路径指向你的 API
+      const data = await res.json();
+      const available = data.filter(item => item.状态 === "空闲中");
+      setCars(available);
+    } catch (err) {
+      console.error("获取失败", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchCars();
+  }, []);
+
+  // 每10秒切换一次
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex(prev => (cars.length > 0 ? (prev + 1) % cars.length : 0));
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [cars]);
+
+  const currentCar = cars[currentIndex];
+
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-100 text-gray-800">
+      <div className="bg-white shadow-lg rounded-2xl p-6 w-80 text-center">
+        <h2 className="text-xl font-bold mb-4">当前空闲车辆</h2>
+        {currentCar ? (
+          <>
+            <p className="text-lg mb-2">车牌号：{currentCar.车牌}</p>
+            <QRCode value={currentCar.二维码} size={200} />
+          </>
+        ) : (
+          <p className="text-gray-500">暂无空闲车辆</p>
+        )}
+      </div>
+    </div>
+  );
+}
