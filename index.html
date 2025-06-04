@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>飞书二维码查询</title>
+</head>
+<body>
+  <h1>车辆二维码数据</h1>
+  <div id="app">加载中...</div>
+
+  <script>
+    fetch('/api/vehicle')
+      .then(res => res.json())
+      .then(data => {
+        const div = document.getElementById('app');
+        div.innerHTML = JSON.stringify(data, null, 2);
+      })
+      .catch(err => {
+        document.getElementById('app').innerText = '加载失败：' + err.message;
+      });
+  </script>
+</body>
+</html>
