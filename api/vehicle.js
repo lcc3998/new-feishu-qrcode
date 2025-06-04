@@ -6,6 +6,7 @@ export default async function handler(req, res) {
   const viewId = process.env.FEISHU_VIEW_ID;
 
   try {
+    // 获取 tenant access token
     const authRes = await fetch("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -23,6 +24,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "获取 token 失败", detail: authData });
     }
 
+    // 获取记录
     const sheetUrl = `https://open.feishu.cn/open-apis/bitable/v1/apps/${appToken}/tables/${tableId}/records?view_id=${viewId}`;
     const dataRes = await fetch(sheetUrl, {
       headers: {
@@ -38,8 +40,17 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "返回内容不是 JSON", detail: text });
     }
 
-    const data = await dataRes.json();
-    res.status(200).json(data);
+    const rawData = await dataRes.json();
+
+    // ✅ 筛选出状态为 "空闲中" 的记录，并提取字段
+    const available = (rawData.data?.items || [])
+      .filter(record => record.fields?.状态 === "空闲中")
+      .map(record => ({
+        车牌: record.fields.车牌,
+        二维码: record.fields.二维码
+      }));
+
+    res.status(200).json(available);
 
   } catch (e) {
     console.error("异常：", e);
