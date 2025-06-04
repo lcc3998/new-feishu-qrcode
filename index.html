@@ -78,61 +78,65 @@
 
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
   <script>
-    const plateEl = document.getElementById("plate");
-    const qrcodeEl = document.getElementById("qrcode");
-    const progressBar = document.querySelector(".progress-bar");
+  const plateEl = document.getElementById("plate");
+  const qrcodeEl = document.getElementById("qrcode");
+  const progressBar = document.querySelector(".progress-bar");
 
-    let cars = [];
-    let currentIndex = 0;
-    let intervalId;
+  let cars = [];
+  let currentIndex = 0;
+  let intervalId;
 
-    async function fetchCars() {
-      try {
-        const res = await fetch("/api/vehicle");
-        const json = await res.json();
-        cars = json || [];
+  async function fetchCars() {
+    try {
+      const res = await fetch("/api/vehicle");
+      const json = await res.json();
 
-        if (cars.length === 0) {
-          plateEl.textContent = "暂无空闲车辆";
-          qrcodeEl.innerHTML = "";
-          progressBar.style.display = "none";
-          return;
-        }
+      // ✅ 正确提取接口中的 fields 并筛选空闲车辆
+      cars = json?.data?.items
+        .map(item => item.fields)
+        .filter(car => car?.状态 === "空闲中") || [];
 
-        showCar(cars[currentIndex]);
-
-        if (intervalId) clearInterval(intervalId);
-        intervalId = setInterval(() => {
-          currentIndex = (currentIndex + 1) % cars.length;
-          restartProgressBar();
-          showCar(cars[currentIndex]);
-        }, 10000);
-
-      } catch (err) {
-        plateEl.textContent = "获取数据失败";
+      if (cars.length === 0) {
+        plateEl.textContent = "暂无空闲车辆";
         qrcodeEl.innerHTML = "";
-        console.error(err);
+        progressBar.style.display = "none";
+        return;
       }
-    }
 
-    function showCar(car) {
-      plateEl.textContent = "车牌号：" + car.车牌;
+      showCar(cars[currentIndex]);
+
+      if (intervalId) clearInterval(intervalId);
+      intervalId = setInterval(() => {
+        currentIndex = (currentIndex + 1) % cars.length;
+        restartProgressBar();
+        showCar(cars[currentIndex]);
+      }, 10000);
+
+    } catch (err) {
+      plateEl.textContent = "获取数据失败";
       qrcodeEl.innerHTML = "";
-      new QRCode(qrcodeEl, {
-        text: car.二维码,
-        width: 200,
-        height: 200
-      });
+      console.error(err);
     }
+  }
 
-    function restartProgressBar() {
-      progressBar.style.animation = "none";
-      // 触发重绘
-      void progressBar.offsetWidth;
-      progressBar.style.animation = "countdown 10s linear infinite";
-    }
+  function showCar(car) {
+    plateEl.textContent = "车牌号：" + car.车牌;
+    qrcodeEl.innerHTML = "";
+    new QRCode(qrcodeEl, {
+      text: car.二维码,
+      width: 200,
+      height: 200
+    });
+  }
 
-    fetchCars();
-  </script>
+  function restartProgressBar() {
+    progressBar.style.animation = "none";
+    void progressBar.offsetWidth; // 强制重新渲染
+    progressBar.style.animation = "countdown 10s linear infinite";
+  }
+
+  fetchCars();
+</script>
+
 </body>
 </html>
