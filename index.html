@@ -1,29 +1,13 @@
+<!-- index.html -->
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
   <meta charset="UTF-8" />
-  <title>空闲车辆展示</title>
+  <title>车辆二维码展示</title>
   <style>
-    body {
-      background: #f0f0f0;
-      font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    #container {
-      background: white;
-      padding: 20px;
-      border-radius: 20px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-      text-align: center;
-      width: 300px;
-    }
-    #plate {
-      font-size: 24px;
-      margin-bottom: 20px;
-    }
+    body { font-family: Arial, sans-serif; background: #f0f0f0; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+    #container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); text-align: center; width: 300px; }
+    #plate { font-size: 24px; margin-bottom: 20px; }
   </style>
 </head>
 <body>
@@ -33,7 +17,55 @@
     <div id="qrcode"></div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <script src="main.js"></script>
+  <!-- 引入二维码库 -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+  <script>
+    const plateEl = document.getElementById("plate");
+    const qrcodeEl = document.getElementById("qrcode");
+    let cars = [];
+    let currentIndex = 0;
+    let intervalId;
+
+    async function fetchCars() {
+      try {
+        const res = await fetch("/api/vehicle");
+        const json = await res.json();
+        // 按你接口返回格式调整，这里假设 json.data.items
+        cars = json?.data?.items
+          .map(item => item.fields)
+          .filter(car => car?.状态 === "空闲中") || [];
+        
+        if (cars.length === 0) {
+          plateEl.textContent = "暂无空闲车辆";
+          qrcodeEl.innerHTML = "";
+          return;
+        }
+        
+        showCar(cars[currentIndex]);
+        if (intervalId) clearInterval(intervalId);
+        intervalId = setInterval(() => {
+          currentIndex = (currentIndex + 1) % cars.length;
+          showCar(cars[currentIndex]);
+        }, 10000);
+
+      } catch (err) {
+        plateEl.textContent = "获取数据失败";
+        qrcodeEl.innerHTML = "";
+        console.error(err);
+      }
+    }
+
+    function showCar(car) {
+      plateEl.textContent = "车牌号：" + car.车牌;
+      qrcodeEl.innerHTML = ""; // 清空之前二维码
+      new QRCode(qrcodeEl, {
+        text: car.二维码,
+        width: 200,
+        height: 200
+      });
+    }
+
+    fetchCars();
+  </script>
 </body>
 </html>
