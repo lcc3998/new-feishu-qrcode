@@ -20,8 +20,8 @@ export default async function handler(req, res) {
   }
 
   // 替换成你的飞书表格信息
-  const appToken = "BFPabzUb4a2DDpsYcDBckoxKnuN";
-  const tableId = "tblyWyUJMrcRWkKa";
+  const appToken = "NtUlbkEMGaVhH7sMzyTcbYoJnnd";
+  const tableId = "tblIf0x1JXQ0S0pF";
   const viewId = "vewb48WrBR";
 
   const sheetUrl = `https://open.feishu.cn/open-apis/bitable/v1/apps/${appToken}/tables/${tableId}/records?view_id=${viewId}`;
