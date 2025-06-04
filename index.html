@@ -8,10 +8,14 @@ export default function CarDisplay() {
   // 获取数据
   const fetchCars = async () => {
     try {
-      const res = await fetch("/api/feishu"); // 确保路径指向你的 API
+      const res = await fetch("/api/feishu");
       const data = await res.json();
-      const available = data.filter(item => item.状态 === "空闲中");
-      setCars(available);
+
+      const available = data?.data?.items
+        ?.map(item => item.fields)
+        ?.filter(item => item?.状态 === "空闲中");
+
+      setCars(available || []);
     } catch (err) {
       console.error("获取失败", err);
     }
@@ -21,10 +25,11 @@ export default function CarDisplay() {
     fetchCars();
   }, []);
 
-  // 每10秒切换一次
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIndex(prev => (cars.length > 0 ? (prev + 1) % cars.length : 0));
+      setCurrentIndex(prev =>
+        cars.length > 0 ? (prev + 1) % cars.length : 0
+      );
     }, 10000);
     return () => clearInterval(interval);
   }, [cars]);
