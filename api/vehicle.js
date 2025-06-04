@@ -33,7 +33,6 @@ export default async function handler(req, res) {
     });
 
     const contentType = dataRes.headers.get("content-type");
-
     if (!contentType || !contentType.includes("application/json")) {
       const text = await dataRes.text();
       console.error("返回内容不是 JSON：", text);
@@ -42,8 +41,28 @@ export default async function handler(req, res) {
 
     const rawData = await dataRes.json();
 
-    // 不筛选，只原样返回，交给前端筛选
-    res.status(200).json(rawData);
+    // 如果请求中带了 ?status=xxx，就筛选该状态的记录
+    const targetStatus = req.query.status;
+    const allItems = rawData?.data?.items || [];
+
+    let filteredItems = allItems;
+
+    if (targetStatus) {
+      filteredItems = allItems.filter(item => {
+        const status = item.fields?.["状态"];
+        return status === targetStatus;
+      });
+    }
+
+    res.status(200).json({
+      code: 0,
+      msg: "success",
+      data: {
+        total: filteredItems.length,
+        has_more: false,
+        items: filteredItems
+      }
+    });
 
   } catch (e) {
     console.error("异常：", e);
