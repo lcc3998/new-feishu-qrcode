@@ -24,9 +24,20 @@
       position: relative;
     }
 
-    h2 {
-      margin-bottom: 20px;
+    .brand {
+      margin-bottom: 12px;
+    }
+
+    .brand-line1 {
+      font-size: 20px;
+      font-weight: bold;
       color: #333;
+    }
+
+    .brand-line2 {
+      font-size: 16px;
+      color: #555;
+      margin-top: 4px;
     }
 
     #plate {
@@ -69,7 +80,10 @@
 </head>
 <body>
   <div id="container">
-    <h2>驴崽 x 哈啰租电动车</h2>
+    <div class="brand">
+      <div class="brand-line1">驴崽 x 哈啰</div>
+      <div class="brand-line2">租电动车</div>
+    </div>
     <div id="plate">加载中...</div>
     <div id="qrcode"></div>
     <div id="tip">支付宝扫码可免押</div>
@@ -92,7 +106,9 @@
         const res = await fetch("/api/vehicle?status=空闲中");
         const json = await res.json();
 
-        cars = json?.data?.items.map(item => item.fields) || [];
+        // 获取车辆并随机排序
+        const rawCars = json?.data?.items.map(item => item.fields) || [];
+        cars = shuffleArray(rawCars);
 
         if (cars.length === 0) {
           plateEl.textContent = "暂无空闲车辆";
@@ -132,14 +148,23 @@
     function restartProgressBar() {
       progressBar.style.display = "block";
       progressBar.style.animation = "none";
-      void progressBar.offsetWidth; // 触发重绘
+      void progressBar.offsetWidth; // 强制触发重绘
       progressBar.style.animation = "countdown 10s linear infinite";
     }
 
-    // 初始加载
+    function shuffleArray(array) {
+      // 洗牌算法
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    // 初始化加载
     fetchCars();
 
-    // 每30秒自动刷新数据
+    // 每30秒刷新一次数据
     fetchIntervalId = setInterval(() => {
       fetchCars();
     }, 30000);
