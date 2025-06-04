@@ -1,49 +1,48 @@
 export default async function handler(req, res) {
   const FEISHU_APP_ID = process.env.FEISHU_APP_ID;
   const FEISHU_APP_SECRET = process.env.FEISHU_APP_SECRET;
+  const appToken = process.env.FEISHU_APP_TOKEN;
+  const tableId = process.env.FEISHU_TABLE_ID;
+  const viewId = process.env.FEISHU_VIEW_ID;
 
-  // 获取 tenant_access_token
-  const authRes = await fetch("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      app_id: FEISHU_APP_ID,
-      app_secret: FEISHU_APP_SECRET
-    })
-  });
+  try {
+    const authRes = await fetch("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        app_id: FEISHU_APP_ID,
+        app_secret: FEISHU_APP_SECRET
+      })
+    });
 
-  const authJson = await authRes.json();
-  const token = authJson.tenant_access_token;
+    const authData = await authRes.json();
+    const token = authData.tenant_access_token;
 
-  if (!token) {
-    return res.status(401).json({ error: "获取 access token 失败", detail: authJson });
-  }
-
-  // 替换成你的飞书表格信息
-  const appToken = "NtUlbkEMGaVhH7sMzyTcbYoJnnd";
-  const tableId = "tblIf0x1JXQ0S0pF";
-  const viewId = "vewb48WrBR";
-  const url = `https://open.feishu.cn/open-apis/bitable/v1/apps/${sheetToken}/tables/${tableId}/records?view_id=${viewId}`;
-
-  const sheetUrl = `https://open.feishu.cn/open-apis/bitable/v1/apps/${appToken}/tables/${tableId}/records?view_id=${viewId}`;
-
-  const dataRes = await fetch(sheetUrl, {
-    headers: {
-      Authorization: `Bearer ${token}`
+    if (!token) {
+      console.error("获取 token 失败", authData);
+      return res.status(500).json({ error: "获取 token 失败", detail: authData });
     }
-  });
 
-  const json = await dataRes.json();
+    const sheetUrl = `https://open.feishu.cn/open-apis/bitable/v1/apps/${appToken}/tables/${tableId}/records?view_id=${viewId}`;
+    const dataRes = await fetch(sheetUrl, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
 
-  if (!json.data) {
-    return res.status(500).json({ error: "获取数据失败", detail: json });
+    const contentType = dataRes.headers.get("content-type");
+
+    if (!contentType || !contentType.includes("application/json")) {
+      const text = await dataRes.text();
+      console.error("返回内容不是 JSON：", text);
+      return res.status(500).json({ error: "返回内容不是 JSON", detail: text });
+    }
+
+    const data = await dataRes.json();
+    res.status(200).json(data);
+
+  } catch (e) {
+    console.error("异常：", e);
+    res.status(500).json({ error: "服务器异常", detail: e.message });
   }
-
-  const records = json.data.items.map(item => ({
-    状态: item.fields["状态"],
-    车牌: item.fields["车牌"],
-    二维码: item.fields["二维码"]
-  }));
-
-  res.status(200).json(records);
 }
