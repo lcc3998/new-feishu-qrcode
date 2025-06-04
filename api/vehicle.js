@@ -42,15 +42,8 @@ export default async function handler(req, res) {
 
     const rawData = await dataRes.json();
 
-    // ✅ 筛选出状态为 "空闲中" 的记录，并提取字段
-    const available = (rawData.data?.items || [])
-      .filter(record => record.fields?.状态 === "空闲中")
-      .map(record => ({
-        车牌: record.fields.车牌,
-        二维码: record.fields.二维码
-      }));
-
-    res.status(200).json(available);
+    // 不筛选，只原样返回，交给前端筛选
+    res.status(200).json(rawData);
 
   } catch (e) {
     console.error("异常：", e);
