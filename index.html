@@ -1,250 +1,263 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8" />
-  <title>车辆二维码展示</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>车辆二维码展示</title>
+<style>
+  /* 基础重置 */
+  * {
+    margin: 0; padding: 0; box-sizing: border-box;
+  }
+  body {
+    font-family: "Microsoft YaHei", Arial, sans-serif;
+    background: #f9fbfd;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+  #container {
+    background: #fff;
+    border-radius: 14px;
+    padding: 30px 28px 40px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    width: 280px;
+    text-align: center;
+    user-select: none;
+  }
+  /* 车型 */
+  #model {
+    font-weight: 700;
+    font-size: 22px;
+    color: #2c3e50;
+    margin-bottom: 8px;
+    min-height: 30px;
+  }
+  /* 车牌 */
+  #plate {
+    display: inline-block;
+    font-weight: 800;
+    font-size: 30px;
+    color: #1565c0;
+    border: 2.5px solid #1565c0;
+    padding: 8px 24px;
+    border-radius: 10px;
+    letter-spacing: 6px;
+    box-shadow: 0 0 15px rgba(21,101,192,0.3);
+    min-width: 180px;
+    margin-bottom: 18px;
+  }
+  /* 支付宝提示文字 */
+  #tip {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e88e5;
+    margin-bottom: 20px;
+    min-height: 20px;
+  }
+  /* 二维码容器，白底圆角阴影 */
+  #qrcode {
+    width: 240px;
+    height: 240px;
+    margin: 0 auto;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 0 18px rgba(74, 144, 226, 0.35);
+    padding: 12px;
+  }
+  /* 进度条外框 */
+  .progress-container {
+    width: 240px;
+    height: 7px;
+    background: #e3f2fd;
+    border-radius: 7px;
+    margin: 18px auto 0;
+    overflow: hidden;
+  }
+  /* 进度条颜色和动画 */
+  .progress-bar {
+    height: 100%;
+    background: #2196f3;
+    transform-origin: right;
+    animation: countdown 10s linear forwards;
+    width: 100%;
+  }
+  /* 右向左缩减动画 */
+  @keyframes countdown {
+    from { width: 100%; }
+    to { width: 0%; }
+  }
+  /* 加载中动画 */
+  #loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 320px;
+  }
+  #loading span {
+    width: 12px;
+    height: 12px;
+    margin: 0 6px;
+    background: #42a5f5;
+    border-radius: 50%;
+    animation: bounce 1.2s infinite ease-in-out;
+  }
+  #loading span:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  #loading span:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+  @keyframes bounce {
+    0%, 80%, 100% {
+      transform: scale(0);
+      opacity: 0.6;
     }
-    body {
-      font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-      background: #f5f7fa;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      padding: 20px;
-      color: #333;
+    40% {
+      transform: scale(1);
+      opacity: 1;
     }
-    .container {
-      background: #fff;
-      border-radius: 16px;
-      padding: 32px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-      width: 100%;
-      max-width: 420px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    #car-info {
-      text-align: center;
-      margin-bottom: 24px;
-      width: 100%;
-    }
-    #model {
-      font-size: 22px;
-      color: #333;
-      font-weight: 600;
-      margin-bottom: 12px;
-      letter-spacing: 1px;
-    }
-    #plate {
-      display: inline-block;
-      font-size: 28px;
-      font-weight: 700;
-      color: #003366;
-      border: 2px solid #003366;
-      border-radius: 8px;
-      padding: 8px 20px;
-      letter-spacing: 6px;
-      box-shadow: 0 4px 12px rgba(0, 51, 102, 0.15);
-      user-select: none;
-      margin-bottom: 16px;
-      min-width: 180px;
-      background: #fff;
-      transition: all 0.3s ease;
-      visibility: hidden; /* 初始隐藏 */
-      height: 0; /* 初始高度为0 */
-      padding: 0; /* 初始无内边距 */
-      border: none; /* 初始无边框 */
-      margin-bottom: 0; /* 初始无下边距 */
-    }
-    #plate.loaded {
-      visibility: visible;
-      height: auto;
-      padding: 8px 20px;
-      border: 2px solid #003366;
-      margin-bottom: 16px;
-    }
-    #plate:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0, 51, 102, 0.2);
-    }
-    #tip {
-      font-size: 16px;
-      color: #1a73e8;
-      font-weight: 600;
-      margin-top: 16px;
-      user-select: none;
-      padding: 8px 16px;
-      background: rgba(26, 115, 232, 0.1);
-      border-radius: 20px;
-      display: inline-block;
-    }
-    #qrcode {
-      width: 260px;
-      height: 260px;
-      margin: 0 auto;
-      box-shadow: 0 8px 24px rgba(74, 144, 226, 0.2);
-      border-radius: 16px;
-      background: #fff;
-      padding: 12px;
-      transition: all 0.3s ease;
-    }
-    #qrcode:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 28px rgba(74, 144, 226, 0.3);
-    }
-    .progress-container {
-      width: 260px;
-      height: 8px;
-      background: #e0e5eb;
-      border-radius: 4px;
-      margin-top: 24px;
-      overflow: hidden;
-      user-select: none;
-      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-    .progress-bar {
-      height: 100%;
-      background: linear-gradient(90deg, #4a90e2, #6bb1ff);
-      transform-origin: right;
-      animation: countdown 10s linear infinite forwards;
-      width: 100%;
-      border-radius: 4px;
-    }
-    @keyframes countdown {
-      from { width: 100%; }
-      to { width: 0%; }
-    }
-    .loading-text {
-      font-size: 18px;
-      color: #666;
-      margin-bottom: 24px;
-    }
-  </style>
+  }
+  /* 无车时提示文字 */
+  #no-car-tip {
+    color: #444;
+    font-size: 16px;
+    margin-top: 14px;
+  }
+</style>
 </head>
 <body>
-  <div class="container">
-    <div id="car-info">
-      <div id="model" class="loading-text">正在加载车辆信息...</div>
+  <div id="container">
+    <div id="loading" style="display:none;">
+      <span></span><span></span><span></span>
+    </div>
+
+    <div id="content" style="display:none;">
+      <div id="model"></div>
       <div id="plate"></div>
       <div id="tip">支付宝扫码有机会免押</div>
+      <div id="qrcode"></div>
+      <div class="progress-container">
+        <div class="progress-bar"></div>
+      </div>
     </div>
-    <div id="qrcode"></div>
-    <div class="progress-container">
-      <div class="progress-bar"></div>
+
+    <div id="no-car" style="display:none;">
+      <div id="qrcode"></div>
+      <div id="no-car-tip">可能暂无可租车辆，请联系微信客服。</div>
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script>
-    const plateEl = document.getElementById("plate");
-    const modelEl = document.getElementById("model");
-    const tipEl = document.getElementById("tip");
-    const qrcodeEl = document.getElementById("qrcode");
-    const progressBar = document.querySelector(".progress-bar");
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  const loadingEl = document.getElementById("loading");
+  const contentEl = document.getElementById("content");
+  const noCarEl = document.getElementById("no-car");
 
-    const wechatQr = "https://u.wechat.com/MBszg0Yw7m4Zplm0k9LkoCE";
+  const modelEl = document.getElementById("model");
+  const plateEl = document.getElementById("plate");
+  const tipEl = document.getElementById("tip");
+  const qrcodeContainer = document.querySelectorAll("#qrcode")[0];
+  const progressBar = document.querySelector(".progress-bar");
 
-    let cars = [];
-    let currentIndex = 0;
-    let switchIntervalId = null;
-    let fetchIntervalId = null;
+  const wechatQr = "https://u.wechat.com/MBszg0Yw7m4Zplm0k9LkoCE";
 
-    // 初始化状态
-    modelEl.textContent = "正在加载车辆信息...";
-    modelEl.className = "loading-text";
-    tipEl.style.visibility = "hidden";
+  let cars = [];
+  let currentIndex = 0;
+  let switchIntervalId = null;
 
-    async function fetchCars() {
-      try {
-        const res = await fetch("/api/vehicle?status=空闲中");
-        const json = await res.json();
+  function showLoading() {
+    loadingEl.style.display = "flex";
+    contentEl.style.display = "none";
+    noCarEl.style.display = "none";
+  }
+  function showContent() {
+    loadingEl.style.display = "none";
+    contentEl.style.display = "block";
+    noCarEl.style.display = "none";
+  }
+  function showNoCar() {
+    loadingEl.style.display = "none";
+    contentEl.style.display = "none";
+    noCarEl.style.display = "block";
+  }
 
-        const rawCars = json?.data?.items.map(item => item.fields) || [];
-        cars = shuffleArray(rawCars);
+  async function fetchCars() {
+    showLoading();
+    try {
+      const res = await fetch("/api/vehicle?status=空闲中");
+      const json = await res.json();
 
-        if (cars.length === 0) {
-          // 无车显示微信客服二维码和提示
-          modelEl.textContent = "暂无可租车辆";
-          modelEl.className = "";
-          plateEl.textContent = "";
-          tipEl.textContent = "可能暂无可租车辆，请联系微信客服。";
-          tipEl.style.visibility = "visible";
-          showQRCode(wechatQr);
-          restartProgressBar();
+      const rawCars = json?.data?.items.map(item => item.fields) || [];
+      cars = shuffleArray(rawCars);
 
-          clearInterval(switchIntervalId);
-          return;
-        }
+      if (cars.length === 0) {
+        showNoCar();
+        renderQRCode(wechatQr);
+        clearInterval(switchIntervalId);
+        return;
+      }
 
-        currentIndex = 0;
+      currentIndex = 0;
+      showContent();
+      showCar(cars[currentIndex]);
+      restartProgressBar();
+
+      clearInterval(switchIntervalId);
+      switchIntervalId = setInterval(() => {
+        currentIndex = (currentIndex + 1) % cars.length;
         showCar(cars[currentIndex]);
         restartProgressBar();
+      }, 10000);
 
-        clearInterval(switchIntervalId);
-        switchIntervalId = setInterval(() => {
-          currentIndex = (currentIndex + 1) % cars.length;
-          showCar(cars[currentIndex]);
-          restartProgressBar();
-        }, 10000);
-      } catch (err) {
-        modelEl.textContent = "获取数据失败";
-        modelEl.className = "";
-        plateEl.textContent = "";
-        tipEl.textContent = "";
-        tipEl.style.visibility = "hidden";
-        qrcodeEl.innerHTML = "";
-        console.error(err);
-        clearInterval(switchIntervalId);
-      }
+    } catch (e) {
+      console.error(e);
+      showNoCar();
+      renderQRCode(wechatQr);
+      clearInterval(switchIntervalId);
     }
+  }
 
-    function showCar(car) {
-      modelEl.textContent = car["车型"] || "未知车型";
-      modelEl.className = "";
-      plateEl.textContent = car["车牌号"] || "未知车牌";
-      plateEl.classList.add("loaded");
-      tipEl.textContent = "支付宝扫码有机会免押";
-      tipEl.style.visibility = "visible";
+  function showCar(car) {
+    modelEl.textContent = car["车型"] || "未知车型";
+    plateEl.textContent = car["车牌号"] || "未知车牌";
+    tipEl.textContent = "支付宝扫码有机会免押";
+    renderQRCode(car["二维码"] || "");
+  }
 
-      showQRCode(car["二维码"] || "");
+  function renderQRCode(text) {
+    const qrEl = document.querySelectorAll("#qrcode")[0];
+    qrEl.innerHTML = "";
+    if (!text) return;
+    new QRCode(qrEl, {
+      text,
+      width: 240,
+      height: 240,
+      colorDark: "#1565c0",
+      colorLight: "#ffffff"
+    });
+  }
+
+  function restartProgressBar() {
+    progressBar.style.animation = "none";
+    void progressBar.offsetWidth; // 触发重绘
+    progressBar.style.animation = "countdown 10s linear forwards";
+  }
+
+  function shuffleArray(arr) {
+    for(let i = arr.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
     }
+    return arr;
+  }
 
-    function showQRCode(text) {
-      qrcodeEl.innerHTML = "";
-      if (!text) return;
-      new QRCode(qrcodeEl, {
-        text,
-        width: 240,
-        height: 240,
-        colorDark: "#4a90e2",
-        colorLight: "#ffffff"
-      });
-    }
-
-    function restartProgressBar() {
-      progressBar.style.animation = "none";
-      void progressBar.offsetWidth;
-      progressBar.style.animation = "countdown 10s linear forwards";
-    }
-
-    function shuffleArray(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    }
-
-    fetchCars();
-    fetchIntervalId = setInterval(fetchCars, 30000);
-  </script>
+  // 首次请求
+  fetchCars();
+  // 30秒刷新数据
+  setInterval(fetchCars, 30000);
+</script>
 </body>
 </html>
