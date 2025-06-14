@@ -5,76 +5,56 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>车辆二维码展示</title>
 <style>
-  * {
-    margin: 0; padding: 0; box-sizing: border-box;
-  }
   html, body {
-    height: 100%;
-    background: #f9fbfd;
+    margin: 0; padding: 0; height: 100%;
     font-family: "Microsoft YaHei", Arial, sans-serif;
-  }
-  body {
+    background: #f9fbfd;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    user-select: none;
-    padding: 20px;
+    justify-content: center; /* 水平居中 */
+    align-items: center;     /* 竖直居中 */
   }
   #container {
+    width: 280px;
     background: #fff;
     border-radius: 14px;
-    padding: 30px 28px 40px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    width: 280px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    padding: 32px 24px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    text-align: center;
+    user-select: none;
   }
   #model {
     font-weight: 700;
-    font-size: 22px;
-    color: #2c3e50;
+    font-size: 20px;
+    color: #34495e;
     margin-bottom: 8px;
-    min-height: 30px;
+    min-height: 28px;
   }
   #plate {
     font-weight: 800;
-    font-size: 30px;
+    font-size: 32px;
     color: #1565c0;
-    border: 2.5px solid #1565c0;
-    padding: 8px 24px;
-    border-radius: 10px;
+    border: 2px solid #1565c0;
+    border-radius: 12px;
+    padding: 10px 32px;
     letter-spacing: 6px;
-    box-shadow: 0 0 15px rgba(21,101,192,0.3);
-    min-width: 180px;
-    margin-bottom: 18px;
+    margin-bottom: 20px;
+    box-shadow: 0 0 18px rgba(21,101,192,0.3);
     user-select: text;
+    display: inline-block;
+    min-width: 180px;
   }
   #tip {
-    font-size: 15px;
     font-weight: 600;
+    font-size: 15px;
     color: #1e88e5;
-    margin-bottom: 20px;
-    min-height: 20px;
-  }
-  /* 二维码容器 */
-  #qrcode-wrapper {
-    width: 240px;
-    height: 240px;
-    background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 0 18px rgba(74, 144, 226, 0.35);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0 auto 18px;
+    margin-bottom: 24px;
   }
   #qrcode {
+    margin: 0 auto;
     width: 240px !important;
     height: 240px !important;
   }
-  /* 加载中动画 */
+  /* 加载动画 */
   #loading {
     display: flex;
     justify-content: center;
@@ -105,10 +85,11 @@
       opacity: 1;
     }
   }
+  /* 无车提示 */
   #no-car-tip {
-    color: #444;
     font-size: 16px;
-    margin-top: 14px;
+    color: #555;
+    margin-top: 16px;
   }
 </style>
 </head>
@@ -118,20 +99,15 @@
       <span></span><span></span><span></span>
     </div>
 
-    <div id="content" style="display:none; width: 100%; max-width: 280px;">
+    <div id="content" style="display:none;">
       <div id="model"></div>
       <div id="plate"></div>
       <div id="tip">支付宝扫码有机会免押</div>
-
-      <div id="qrcode-wrapper">
-        <div id="qrcode"></div>
-      </div>
+      <div id="qrcode"></div>
     </div>
 
-    <div id="no-car" style="display:none; width: 100%; max-width: 280px;">
-      <div id="qrcode-wrapper" style="margin-bottom: 10px;">
-        <div id="qrcode"></div>
-      </div>
+    <div id="no-car" style="display:none;">
+      <div id="qrcode"></div>
       <div id="no-car-tip">可能暂无可租车辆，请联系微信客服。</div>
     </div>
   </div>
@@ -141,16 +117,17 @@
   const loadingEl = document.getElementById("loading");
   const contentEl = document.getElementById("content");
   const noCarEl = document.getElementById("no-car");
+  const container = document.getElementById("container");
 
   const modelEl = document.getElementById("model");
   const plateEl = document.getElementById("plate");
   const tipEl = document.getElementById("tip");
 
-  // 注意这里为了防止id冲突，两个不同区块各自二维码容器
-  const qrcodeWrapperContent = contentEl.querySelector("#qrcode");
-  const qrcodeWrapperNoCar = noCarEl.querySelector("#qrcode");
+  // 两个二维码容器，避免冲突
+  const qrcodeContent = contentEl.querySelector("#qrcode");
+  const qrcodeNoCar = noCarEl.querySelector("#qrcode");
 
-  const wechatQr = "https://u.wechat.com/MBszg0Yw7m4Zplm0k9LkoCE";
+  const wechatQrUrl = "https://u.wechat.com/MBszg0Yw7m4Zplm0k9LkoCE";
 
   let cars = [];
   let currentIndex = 0;
@@ -163,13 +140,13 @@
   }
   function showContent() {
     loadingEl.style.display = "none";
-    contentEl.style.display = "flex";
+    contentEl.style.display = "block";
     noCarEl.style.display = "none";
   }
   function showNoCar() {
     loadingEl.style.display = "none";
     contentEl.style.display = "none";
-    noCarEl.style.display = "flex";
+    noCarEl.style.display = "block";
   }
 
   async function fetchCars() {
@@ -178,12 +155,12 @@
       const res = await fetch("/api/vehicle?status=空闲中");
       const json = await res.json();
 
-      const rawCars = json?.data?.items.map(item => item.fields) || [];
-      cars = shuffleArray(rawCars);
+      cars = json?.data?.items.map(i => i.fields) || [];
+      cars = shuffleArray(cars);
 
       if (cars.length === 0) {
         showNoCar();
-        renderQRCode(wechatQr, qrcodeWrapperNoCar);
+        renderQRCode(wechatQrUrl, qrcodeNoCar);
         clearInterval(switchIntervalId);
         return;
       }
@@ -198,10 +175,10 @@
         showCar(cars[currentIndex]);
       }, 10000);
 
-    } catch (e) {
+    } catch(e) {
       console.error(e);
       showNoCar();
-      renderQRCode(wechatQr, qrcodeWrapperNoCar);
+      renderQRCode(wechatQrUrl, qrcodeNoCar);
       clearInterval(switchIntervalId);
     }
   }
@@ -210,7 +187,7 @@
     modelEl.textContent = car["车型"] || "未知车型";
     plateEl.textContent = car["车牌号"] || "未知车牌";
     tipEl.textContent = "支付宝扫码有机会免押";
-    renderQRCode(car["二维码链接"] || car["二维码"] || "", qrcodeWrapperContent);
+    renderQRCode(car["二维码链接"] || car["二维码"] || "", qrcodeContent);
   }
 
   function renderQRCode(text, container) {
@@ -222,7 +199,7 @@
       width: 240,
       height: 240,
       colorDark: "#1565c0",
-      colorLight: "#ffffff"
+      colorLight: "#fff"
     });
   }
 
