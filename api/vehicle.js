@@ -24,11 +24,11 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "获取 token 失败", detail: authData });
     }
 
-    // 获取记录，注意URL用反引号包裹才能识别模板字符串
+    // 获取记录
     const sheetUrl = `https://open.feishu.cn/open-apis/bitable/v1/apps/${appToken}/tables/${tableId}/records?view_id=${viewId}`;
     const dataRes = await fetch(sheetUrl, {
       headers: {
-        Authorization: `Bearer ${token}`  // Bearer token 要用字符串模板包裹
+        Authorization: `Bearer ${token}`
       }
     });
 
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
 
     const rawData = await dataRes.json();
 
-    // 如果请求中带了 ?status=xxx，就筛选该状态的记录
+    // 筛选状态
     const targetStatus = req.query.status;
     const allItems = rawData?.data?.items || [];
 
@@ -49,7 +49,7 @@ export default async function handler(req, res) {
 
     if (targetStatus) {
       filteredItems = allItems.filter(item => {
-        const status = item.fields?.["状态"];
+        const status = item.fields?.["车辆状态"];
         return status === targetStatus;
       });
     }
