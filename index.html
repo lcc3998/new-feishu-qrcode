@@ -60,25 +60,25 @@
     }
 
     /* 进度条本体 */
-    .progress-bar {
-      position: absolute;
-      top: 0;
-      right: 0; /* 从右侧开始 */
-      height: 100%;
-      width: 100%;
-      background: #4caf50;
-      border-radius: 2px;
-      animation: countdownWidth 10s linear infinite;
-    }
+.progress-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: #4caf50;
+  border-radius: 2px;
+  animation: countdownWidth 10s linear infinite;
+}
 
-    @keyframes countdownWidth {
-      from {
-        width: 100%;
-      }
-      to {
-        width: 0%;
-      }
-    }
+@keyframes countdownWidth {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
   </style>
 </head>
 <body>
