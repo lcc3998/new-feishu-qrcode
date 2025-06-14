@@ -24,11 +24,11 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: "获取 token 失败", detail: authData });
     }
 
-    // 获取记录
-    const sheetUrl = https://open.feishu.cn/open-apis/bitable/v1/apps/${appToken}/tables/${tableId}/records?view_id=${viewId};
+    // 获取记录，注意URL用反引号包裹才能识别模板字符串
+    const sheetUrl = `https://open.feishu.cn/open-apis/bitable/v1/apps/${appToken}/tables/${tableId}/records?view_id=${viewId}`;
     const dataRes = await fetch(sheetUrl, {
       headers: {
-        Authorization: Bearer ${token}
+        Authorization: `Bearer ${token}`  // Bearer token 要用字符串模板包裹
       }
     });
 
