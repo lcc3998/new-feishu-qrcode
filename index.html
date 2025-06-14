@@ -9,107 +9,103 @@
       padding: 0;
       box-sizing: border-box;
     }
-
     body {
       font-family: "Microsoft YaHei", Arial, sans-serif;
-      background: #f5f8fa;
+      background: #fff;
       height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
       flex-direction: column;
-      color: #333;
+      padding: 20px;
     }
-
-    #carType {
-      font-size: 18px;
-      color: #4a90e2;
-      font-weight: 500;
-      margin-bottom: 6px;
-      letter-spacing: 1px;
-      user-select: none;
-    }
-
-    #plate {
-      font-size: 26px;
-      font-weight: 600;
-      color: #1a1a1a;
-      padding: 8px 20px;
-      border: 1.5px solid #4a90e2;
-      border-radius: 30px;
-      background: #ffffff;
-      box-shadow: 0 2px 6px rgb(74 144 226 / 0.2);
-      letter-spacing: 3px;
-      user-select: none;
-      margin-bottom: 20px;
-      min-width: 180px;
+    #car-info {
       text-align: center;
+      margin-bottom: 12px;
     }
-
+    #model {
+      font-size: 20px;
+      color: #333;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    #plate {
+      display: inline-block;
+      font-size: 28px;
+      font-weight: 700;
+      color: #003366;
+      border: 2px solid #003366;
+      border-radius: 6px;
+      padding: 6px 18px;
+      letter-spacing: 6px;
+      box-shadow: 0 0 8px rgba(0, 51, 102, 0.3);
+      user-select: none;
+      margin-bottom: 12px;
+      min-width: 160px;
+    }
     #tip {
       font-size: 16px;
-      color: #4a90e2;
+      color: #1a73e8;
+      font-weight: 600;
       margin-top: 12px;
       user-select: none;
-      font-weight: 500;
     }
-
     #qrcode {
       width: 240px;
       height: 240px;
-      background: white;
-      padding: 12px;
-      border-radius: 16px;
-      box-shadow: 0 8px 20px rgb(74 144 226 / 0.15);
-      margin-bottom: 8px;
+      margin: 0 auto;
+      box-shadow: 0 0 20px rgba(74, 144, 226, 0.4);
+      border-radius: 12px;
+      background: #fff;
+      padding: 8px;
     }
-
-    .progress-bar-container {
+    .progress-container {
       width: 240px;
-      height: 5px;
-      background: #d9e7ff;
+      height: 6px;
+      background: #eee;
       border-radius: 3px;
+      margin-top: 12px;
       overflow: hidden;
-      margin-bottom: 24px;
+      user-select: none;
     }
-
     .progress-bar {
       height: 100%;
       background: #4a90e2;
-      animation: countdownWidth 10s linear infinite;
       transform-origin: right;
+      animation: countdown 10s linear infinite forwards;
+      width: 100%;
     }
-
-    @keyframes countdownWidth {
-      from {
-        width: 100%;
-      }
-      to {
-        width: 0%;
-      }
+    @keyframes countdown {
+      from { width: 100%; }
+      to { width: 0%; }
     }
   </style>
 </head>
 <body>
-  <div id="carType"></div>
-  <div id="plate">加载中...</div>
+  <div id="car-info">
+    <div id="model">加载中...</div>
+    <div id="plate"></div>
+    <div id="tip">支付宝扫码有机会免押</div>
+  </div>
   <div id="qrcode"></div>
-  <div id="tip">支付宝扫码有机会免押</div>
-  <div class="progress-bar-container">
+  <div class="progress-container">
     <div class="progress-bar"></div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
     const plateEl = document.getElementById("plate");
+    const modelEl = document.getElementById("model");
+    const tipEl = document.getElementById("tip");
     const qrcodeEl = document.getElementById("qrcode");
     const progressBar = document.querySelector(".progress-bar");
-    const carTypeEl = document.getElementById("carType");
-    const tip = document.getElementById("tip");
+
+    const wechatQr = "https://u.wechat.com/MBszg0Yw7m4Zplm0k9LkoCE";
 
     let cars = [];
     let currentIndex = 0;
     let switchIntervalId = null;
+    let fetchIntervalId = null;
 
     async function fetchCars() {
       try {
@@ -120,11 +116,13 @@
         cars = shuffleArray(rawCars);
 
         if (cars.length === 0) {
-          plateEl.textContent = "";
-          carTypeEl.textContent = "";
-          qrcodeEl.innerHTML = "";
-          tip.textContent = "可能暂无可租车辆，请联系微信客服。";
-          progressBar.style.display = "none";
+          // 无车显示微信客服二维码和提示
+          modelEl.textContent = "";
+          plateEl.textContent = "暂无可租车辆";
+          tipEl.textContent = "可能暂无可租车辆，请联系微信客服。";
+          showQRCode(wechatQr);
+          restartProgressBar();
+
           clearInterval(switchIntervalId);
           return;
         }
@@ -136,30 +134,35 @@
         clearInterval(switchIntervalId);
         switchIntervalId = setInterval(() => {
           currentIndex = (currentIndex + 1) % cars.length;
-          restartProgressBar();
           showCar(cars[currentIndex]);
+          restartProgressBar();
         }, 10000);
-
-        tip.textContent = "支付宝扫码有机会免押";
-        progressBar.style.display = "block";
-
       } catch (err) {
+        modelEl.textContent = "";
         plateEl.textContent = "获取数据失败";
-        carTypeEl.textContent = "";
+        tipEl.textContent = "";
         qrcodeEl.innerHTML = "";
         console.error(err);
+        clearInterval(switchIntervalId);
       }
     }
 
     function showCar(car) {
+      modelEl.textContent = car["车型"] || "未知车型";
       plateEl.textContent = car["车牌号"] || "未知车牌";
-      carTypeEl.textContent = car["车型"] || "";
+      tipEl.textContent = "支付宝扫码有机会免押";
+
+      showQRCode(car["二维码"] || "");
+    }
+
+    function showQRCode(text) {
       qrcodeEl.innerHTML = "";
+      if (!text) return;
       new QRCode(qrcodeEl, {
-        text: car["二维码链接"] || "",
+        text,
         width: 240,
         height: 240,
-        colorDark: "#4a90e2",   // 蓝色
+        colorDark: "#4a90e2",
         colorLight: "#ffffff"
       });
     }
@@ -167,7 +170,7 @@
     function restartProgressBar() {
       progressBar.style.animation = "none";
       void progressBar.offsetWidth;
-      progressBar.style.animation = "countdownWidth 10s linear infinite";
+      progressBar.style.animation = "countdown 10s linear forwards";
     }
 
     function shuffleArray(array) {
@@ -179,7 +182,7 @@
     }
 
     fetchCars();
-    setInterval(fetchCars, 30000);
+    fetchIntervalId = setInterval(fetchCars, 30000);
   </script>
 </body>
 </html>
