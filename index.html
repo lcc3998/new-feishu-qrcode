@@ -48,6 +48,13 @@
       font-weight: 600;
       margin-top: 16px;
     }
+    #error-tip {
+      font-size: 16px;
+      color: #666;
+      margin-top: 16px;
+      text-align: center;
+      display: none;
+    }
     #qrcode {
       width: 260px;
       height: 260px;
@@ -82,9 +89,10 @@
   <div id="car-info" class="hidden">
     <div id="model"></div>
     <div id="plate"></div>
-    <div id="tip"></div>
+    <div id="tip">支付宝扫码有机会免押</div>
   </div>
   <div id="qrcode"></div>
+  <div id="error-tip">可能暂无可租车辆，请联系微信客服获得帮助</div>
   <div class="progress-container hidden">
     <div class="progress-bar"></div>
   </div>
@@ -94,6 +102,7 @@
     const plateEl = document.getElementById("plate");
     const modelEl = document.getElementById("model");
     const tipEl = document.getElementById("tip");
+    const errorTipEl = document.getElementById("error-tip");
     const qrcodeEl = document.getElementById("qrcode");
     const progressContainer = document.querySelector(".progress-container");
     const carInfo = document.getElementById("car-info");
@@ -114,17 +123,13 @@
         cars = shuffleArray(rawCars);
 
         if (cars.length === 0) {
-          // 无车状态：只显示黑色二维码
-          carInfo.classList.add("hidden");
-          progressContainer.classList.add("hidden");
-          showQRCode(wechatQr, "#000000");
-          clearInterval(switchIntervalId);
+          // 无车状态
+          showErrorState();
           return;
         }
 
         // 有车状态
-        carInfo.classList.remove("hidden");
-        progressContainer.classList.remove("hidden");
+        showVehicleState();
         currentIndex = 0;
         showCar(cars[currentIndex]);
         restartProgressBar();
@@ -136,20 +141,30 @@
           restartProgressBar();
         }, 10000);
       } catch (err) {
-        // 错误状态：只显示黑色二维码
-        carInfo.classList.add("hidden");
-        progressContainer.classList.add("hidden");
-        showQRCode(wechatQr, "#000000");
+        // 错误状态
+        showErrorState();
         console.error(err);
-        clearInterval(switchIntervalId);
       }
     }
 
     function showCar(car) {
       modelEl.textContent = car["车型"] || "未知车型";
       plateEl.textContent = car["车牌号"] || "未知车牌";
-      tipEl.textContent = "支付宝扫码有机会免押";
-      showQRCode(car["二维码"] || "", "#4a90e2");
+      showQRCode(car["二维码"] || "", "#4a90e2"); // 蓝色二维码
+    }
+
+    function showVehicleState() {
+      carInfo.classList.remove("hidden");
+      progressContainer.classList.remove("hidden");
+      errorTipEl.classList.add("hidden");
+    }
+
+    function showErrorState() {
+      carInfo.classList.add("hidden");
+      progressContainer.classList.add("hidden");
+      errorTipEl.classList.remove("hidden");
+      showQRCode(wechatQr, "#000000"); // 黑色二维码
+      clearInterval(switchIntervalId);
     }
 
     function showQRCode(text, colorDark = "#4a90e2") {
@@ -165,6 +180,7 @@
     }
 
     function restartProgressBar() {
+      const progressBar = document.querySelector(".progress-bar");
       progressBar.style.animation = "none";
       void progressBar.offsetWidth;
       progressBar.style.animation = "countdown 10s linear forwards";
@@ -178,6 +194,10 @@
       return array;
     }
 
+    // 初始状态
+    showErrorState(); // 初始显示错误状态（黑色二维码+提示）
+    
+    // 开始获取数据
     fetchCars();
     fetchIntervalId = setInterval(fetchCars, 30000);
   </script>
