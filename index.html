@@ -12,36 +12,40 @@
 
     body {
       font-family: "Microsoft YaHei", Arial, sans-serif;
-      background: #fff;
+      background: #ffffff;
       height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
       flex-direction: column;
-      padding: 20px;
-    }
-
-    #car-info {
-      text-align: center;
-      margin-bottom: 12px;
-    }
-
-    #model {
-      font-size: 16px;
-      color: #666;
-      margin-bottom: 4px;
     }
 
     #plate {
-      font-size: 32px;
-      font-weight: 700;
-      color: #222;
+      font-size: 28px;
+      font-weight: bold;
+      color: #000;
+      margin-bottom: 6px;
+      text-align: center;
+    }
+
+    #model {
+      font-size: 18px;
+      color: #555;
+      margin-bottom: 20px;
+      text-align: center;
     }
 
     #qrcode {
       width: 240px;
       height: 240px;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
+    }
+
+    #tip {
+      font-size: 14px;
+      color: #666;
+      margin-top: 8px;
+      text-align: center;
     }
 
     .progress-bar {
@@ -50,23 +54,26 @@
       background: #4caf50;
       border-radius: 2px;
       animation: countdown 10s linear infinite;
-      transform-origin: right;  /* 关键：从右边开始缩短 */
+      transform-origin: 100% 50%; /* 从右边开始缩短 */
+      will-change: transform;
     }
 
     @keyframes countdown {
-      from { transform: scaleX(1); }
-      to { transform: scaleX(0); }
+      from {
+        transform: scaleX(1);
+      }
+      to {
+        transform: scaleX(0);
+      }
     }
   </style>
 </head>
 <body>
-  <div id="car-info">
-    <div id="model">加载中...</div>
-    <div id="plate"></div>
-  </div>
-
+  <div id="plate">加载中...</div>
+  <div id="model"></div>
   <div id="qrcode"></div>
   <div class="progress-bar"></div>
+  <div id="tip"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
   <script>
@@ -74,12 +81,14 @@
     const modelEl = document.getElementById("model");
     const qrcodeEl = document.getElementById("qrcode");
     const progressBar = document.querySelector(".progress-bar");
+    const tipEl = document.getElementById("tip");
 
-    const defaultWeChatQRCode = "https://u.wechat.com/MBszg0Yw7m4Zplm0k9LkoCE";
+    const wechatQRCode = "https://u.wechat.com/MBszg0Yw7m4Zplm0k9LkoCE";
 
     let cars = [];
     let currentIndex = 0;
     let switchIntervalId = null;
+    let fetchIntervalId = null;
 
     async function fetchCars() {
       try {
@@ -90,9 +99,9 @@
         cars = shuffleArray(rawCars);
 
         if (cars.length === 0) {
-          showCar(null);
+          // 没车，显示客服微信二维码和提示
+          showWechatCustomer();
           clearInterval(switchIntervalId);
-          progressBar.style.display = "none";
           return;
         }
 
@@ -103,37 +112,43 @@
         clearInterval(switchIntervalId);
         switchIntervalId = setInterval(() => {
           currentIndex = (currentIndex + 1) % cars.length;
-          showCar(cars[currentIndex]);
           restartProgressBar();
+          showCar(cars[currentIndex]);
         }, 10000);
 
-        progressBar.style.display = "block";
       } catch (err) {
-        modelEl.textContent = "";
         plateEl.textContent = "获取数据失败";
+        modelEl.textContent = "";
         qrcodeEl.innerHTML = "";
-        progressBar.style.display = "none";
+        tipEl.textContent = "";
         console.error(err);
       }
     }
 
     function showCar(car) {
-      if (car) {
-        modelEl.textContent = car["车型"] || "";
-        plateEl.textContent = car["车牌号"] || "未知车牌";
-        var qrText = car["二维码"] || "";
-      } else {
-        modelEl.textContent = "";
-        plateEl.textContent = "可能暂无可租车辆，请联系微信客服。";
-        var qrText = defaultWeChatQRCode;
-      }
-
+      plateEl.textContent = car["车牌号"] || "未知车牌";
+      modelEl.textContent = car["车型"] || "";
+      tipEl.textContent = "支付宝扫码可免押";
       qrcodeEl.innerHTML = "";
       new QRCode(qrcodeEl, {
-        text: qrText,
+        text: car["二维码"] || "",
         width: 240,
         height: 240
       });
+      progressBar.style.display = "block";
+    }
+
+    function showWechatCustomer() {
+      plateEl.textContent = "";
+      modelEl.textContent = "";
+      tipEl.textContent = "可能暂无可租车辆，请联系微信客服。";
+      qrcodeEl.innerHTML = "";
+      new QRCode(qrcodeEl, {
+        text: wechatQRCode,
+        width: 240,
+        height: 240
+      });
+      progressBar.style.display = "none";
     }
 
     function restartProgressBar() {
@@ -152,7 +167,9 @@
     }
 
     fetchCars();
-    setInterval(fetchCars, 30000);
+    fetchIntervalId = setInterval(() => {
+      fetchCars();
+    }, 30000);
   </script>
 </body>
 </html>
