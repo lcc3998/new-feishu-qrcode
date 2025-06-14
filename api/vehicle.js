@@ -4,9 +4,15 @@ export default async function handler(req, res) {
   const appToken = process.env.FEISHU_APP_TOKEN;
   const tableId = process.env.FEISHU_TABLE_ID;
   const viewId = process.env.FEISHU_VIEW_ID;
+  const API_SECRET_KEY = process.env.API_SECRET_KEY; // 自定义接口访问密钥
+
+  // 1. 安全校验：检查 API 密钥
+  if (req.headers["x-api-key"] !== API_SECRET_KEY) {
+    return res.status(403).json({ error: "无权限访问接口" });
+  }
 
   try {
-    // 获取 tenant access token
+    // 2. 获取飞书 tenant access token
     const authRes = await fetch("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -20,11 +26,11 @@ export default async function handler(req, res) {
     const token = authData.tenant_access_token;
 
     if (!token) {
-      console.error("获取 token 失败", authData);
-      return res.status(500).json({ error: "获取 token 失败", detail: authData });
+      console.error("飞书 token 获取失败:", authData?.msg || authData);
+      return res.status(500).json({ error: "获取 token 失败" });
     }
 
-    // 获取记录
+    // 3. 请求多维表格数据
     const sheetUrl = `https://open.feishu.cn/open-apis/bitable/v1/apps/${appToken}/tables/${tableId}/records?view_id=${viewId}`;
     const dataRes = await fetch(sheetUrl, {
       headers: {
@@ -35,16 +41,15 @@ export default async function handler(req, res) {
     const contentType = dataRes.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
       const text = await dataRes.text();
-      console.error("返回内容不是 JSON：", text);
-      return res.status(500).json({ error: "返回内容不是 JSON", detail: text });
+      console.error("飞书返回非 JSON 格式：", text);
+      return res.status(500).json({ error: "飞书返回异常" });
     }
 
     const rawData = await dataRes.json();
-
-    // 如果请求中带了 ?status=xxx，就筛选该状态的记录
-    const targetStatus = req.query.status;
     const allItems = rawData?.data?.items || [];
 
+    // 4. 过滤指定状态的记录（可选）
+    const targetStatus = req.query.status;
     let filteredItems = allItems;
 
     if (targetStatus) {
@@ -54,18 +59,24 @@ export default async function handler(req, res) {
       });
     }
 
+    // 5. 只返回需要字段（脱敏处理）
+    const resultItems = filteredItems.map(item => ({
+      plate: item.fields?.["车牌"],
+      qr: item.fields?.["二维码"]
+    }));
+
     res.status(200).json({
       code: 0,
       msg: "success",
       data: {
-        total: filteredItems.length,
+        total: resultItems.length,
         has_more: false,
-        items: filteredItems
+        items: resultItems
       }
     });
 
   } catch (e) {
-    console.error("异常：", e);
-    res.status(500).json({ error: "服务器异常", detail: e.message });
+    console.error("接口异常:", e?.message || e);
+    res.status(500).json({ error: "服务器异常" });
   }
 }
