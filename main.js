@@ -10,12 +10,10 @@ async function fetchCars() {
     const res = await fetch("/api/vehicle");
     const json = await res.json();
 
-    // 假设接口返回结构如下
-    // { data: { items: [ { fields: { 车牌: "123", 状态: "空闲中", 二维码: "http://..." } }, ... ] } }
-
+    // 过滤状态为“空闲中”的车辆
     cars = json.data.items
       .map(item => item.fields)
-      .filter(item => item.车辆状态 === "空闲中");
+      .filter(item => item["车辆状态"] === "空闲中");
 
     if (cars.length === 0) {
       plateEl.textContent = "暂无空闲车辆";
@@ -37,10 +35,10 @@ async function fetchCars() {
 }
 
 function showCar(car) {
-  plateEl.textContent = `车牌号：${car.车牌}`;
+  plateEl.textContent = `车牌号：${car["车牌号"]}`;
   qrcodeEl.innerHTML = "";
   qr = new QRCode(qrcodeEl, {
-    text: car.二维码,
+    text: car["二维码链接"],
     width: 200,
     height: 200
   });
