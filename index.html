@@ -58,18 +58,6 @@
       min-width: 180px;
       background: #fff;
       transition: all 0.3s ease;
-      visibility: hidden; /* 初始隐藏 */
-      height: 0; /* 初始高度为0 */
-      padding: 0; /* 初始无内边距 */
-      border: none; /* 初始无边框 */
-      margin-bottom: 0; /* 初始无下边距 */
-    }
-    #plate.loaded {
-      visibility: visible;
-      height: auto;
-      padding: 8px 20px;
-      border: 2px solid #003366;
-      margin-bottom: 16px;
     }
     #plate:hover {
       transform: translateY(-2px);
@@ -90,7 +78,7 @@
       width: 260px;
       height: 260px;
       margin: 0 auto;
-      box-shadow: 0 8px 24px rgba(74, 144, 226, 0.2);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
       border-radius: 16px;
       background: #fff;
       padding: 12px;
@@ -98,7 +86,7 @@
     }
     #qrcode:hover {
       transform: translateY(-4px);
-      box-shadow: 0 12px 28px rgba(74, 144, 226, 0.3);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
     }
     .progress-container {
       width: 260px;
@@ -127,6 +115,12 @@
       color: #666;
       margin-bottom: 24px;
     }
+    .no-vehicle .progress-container {
+      display: none;
+    }
+    .no-vehicle #plate {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -134,7 +128,7 @@
     <div id="car-info">
       <div id="model" class="loading-text">正在加载车辆信息...</div>
       <div id="plate"></div>
-      <div id="tip">支付宝扫码有机会免押</div>
+      <div id="tip"></div>
     </div>
     <div id="qrcode"></div>
     <div class="progress-container">
@@ -149,6 +143,7 @@
     const tipEl = document.getElementById("tip");
     const qrcodeEl = document.getElementById("qrcode");
     const progressBar = document.querySelector(".progress-bar");
+    const container = document.querySelector(".container");
 
     const wechatQr = "https://u.wechat.com/MBszg0Yw7m4Zplm0k9LkoCE";
 
@@ -160,7 +155,7 @@
     // 初始化状态
     modelEl.textContent = "正在加载车辆信息...";
     modelEl.className = "loading-text";
-    tipEl.style.visibility = "hidden";
+    tipEl.textContent = "";
 
     async function fetchCars() {
       try {
@@ -171,19 +166,19 @@
         cars = shuffleArray(rawCars);
 
         if (cars.length === 0) {
-          // 无车显示微信客服二维码和提示
+          // 无车状态
+          container.classList.add("no-vehicle");
           modelEl.textContent = "暂无可租车辆";
           modelEl.className = "";
           plateEl.textContent = "";
-          tipEl.textContent = "可能暂无可租车辆，请联系微信客服。";
-          tipEl.style.visibility = "visible";
-          showQRCode(wechatQr);
-          restartProgressBar();
-
+          tipEl.textContent = "请联系微信客服";
+          showQRCode(wechatQr, "#000000"); // 黑色二维码
           clearInterval(switchIntervalId);
           return;
         }
 
+        // 有车状态
+        container.classList.remove("no-vehicle");
         currentIndex = 0;
         showCar(cars[currentIndex]);
         restartProgressBar();
@@ -195,12 +190,13 @@
           restartProgressBar();
         }, 10000);
       } catch (err) {
+        // 错误状态
+        container.classList.add("no-vehicle");
         modelEl.textContent = "获取数据失败";
         modelEl.className = "";
         plateEl.textContent = "";
-        tipEl.textContent = "";
-        tipEl.style.visibility = "hidden";
-        qrcodeEl.innerHTML = "";
+        tipEl.textContent = "请稍后再试";
+        showQRCode(wechatQr, "#000000"); // 黑色二维码
         console.error(err);
         clearInterval(switchIntervalId);
       }
@@ -210,21 +206,19 @@
       modelEl.textContent = car["车型"] || "未知车型";
       modelEl.className = "";
       plateEl.textContent = car["车牌号"] || "未知车牌";
-      plateEl.classList.add("loaded");
       tipEl.textContent = "支付宝扫码有机会免押";
-      tipEl.style.visibility = "visible";
 
-      showQRCode(car["二维码"] || "");
+      showQRCode(car["二维码"] || "", "#4a90e2"); // 蓝色二维码
     }
 
-    function showQRCode(text) {
+    function showQRCode(text, colorDark = "#4a90e2") {
       qrcodeEl.innerHTML = "";
       if (!text) return;
       new QRCode(qrcodeEl, {
         text,
         width: 240,
         height: 240,
-        colorDark: "#4a90e2",
+        colorDark: colorDark,
         colorLight: "#ffffff"
       });
     }
