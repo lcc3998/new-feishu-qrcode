@@ -19,41 +19,12 @@
       flex-direction: column;
       color: #333;
     }
-    #car-info {
-      text-align: center;
-      margin-bottom: 20px;
-      width: 100%;
-    }
-    #model {
-      font-size: 22px;
-      color: #333;
+    #vehicle-info {
+      font-size: 24px;
       font-weight: 600;
-      margin-bottom: 12px;
-    }
-    #plate {
-      display: inline-block;
-      font-size: 28px;
-      font-weight: 700;
       color: #003366;
-      border: 2px solid #003366;
-      border-radius: 8px;
-      padding: 8px 20px;
-      letter-spacing: 6px;
-      margin-bottom: 16px;
-      min-width: 180px;
-    }
-    #tip {
-      font-size: 16px;
-      color: #1a73e8;
-      font-weight: 600;
-      margin-top: 16px;
-    }
-    #error-tip {
-      font-size: 16px;
-      color: #666;
-      margin-top: 16px;
+      margin-bottom: 20px;
       text-align: center;
-      display: none;
     }
     #qrcode {
       width: 260px;
@@ -61,20 +32,25 @@
       margin: 0 auto;
       padding: 12px;
     }
-    .progress-container {
-      width: 260px;
-      height: 8px;
-      background: #e0e5eb;
-      border-radius: 4px;
-      margin-top: 20px;
-      overflow: hidden;
-    }
     .progress-bar {
-      height: 100%;
+      width: 260px;
+      height: 4px;
       background: #4a90e2;
       transform-origin: right;
       animation: countdown 10s linear infinite forwards;
-      width: 100%;
+    }
+    #tip {
+      font-size: 16px;
+      color: #1a73e8;
+      font-weight: 600;
+      margin-top: 20px;
+      text-align: center;
+    }
+    #error-tip {
+      font-size: 16px;
+      color: #666;
+      margin-top: 20px;
+      text-align: center;
     }
     @keyframes countdown {
       from { width: 100%; }
@@ -86,26 +62,19 @@
   </style>
 </head>
 <body>
-  <div id="car-info" class="hidden">
-    <div id="model"></div>
-    <div id="plate"></div>
-    <div id="tip">支付宝扫码有机会免押</div>
-  </div>
+  <div id="vehicle-info" class="hidden"></div>
   <div id="qrcode"></div>
-  <div id="error-tip">可能暂无可租车辆，请联系微信客服获得帮助</div>
-  <div class="progress-container hidden">
-    <div class="progress-bar"></div>
-  </div>
+  <div id="error-tip" class="hidden">可能暂无可租车辆，请联系微信客服获得帮助</div>
+  <div class="progress-bar hidden"></div>
+  <div id="tip" class="hidden">支付宝扫码有机会免押</div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
-    const plateEl = document.getElementById("plate");
-    const modelEl = document.getElementById("model");
-    const tipEl = document.getElementById("tip");
+    const vehicleInfoEl = document.getElementById("vehicle-info");
     const errorTipEl = document.getElementById("error-tip");
     const qrcodeEl = document.getElementById("qrcode");
-    const progressContainer = document.querySelector(".progress-container");
-    const carInfo = document.getElementById("car-info");
+    const progressBar = document.querySelector(".progress-bar");
+    const tipEl = document.getElementById("tip");
 
     const wechatQr = "https://u.wechat.com/MBszg0Yw7m4Zplm0k9LkoCE";
 
@@ -123,12 +92,10 @@
         cars = shuffleArray(rawCars);
 
         if (cars.length === 0) {
-          // 无车状态
           showErrorState();
           return;
         }
 
-        // 有车状态
         showVehicleState();
         currentIndex = 0;
         showCar(cars[currentIndex]);
@@ -141,29 +108,32 @@
           restartProgressBar();
         }, 10000);
       } catch (err) {
-        // 错误状态
         showErrorState();
         console.error(err);
       }
     }
 
     function showCar(car) {
-      modelEl.textContent = car["车型"] || "未知车型";
-      plateEl.textContent = car["车牌号"] || "未知车牌";
-      showQRCode(car["二维码"] || "", "#4a90e2"); // 蓝色二维码
+      const model = car["车型"] || "未知车型";
+      const plate = car["车牌号"] || "未知车牌";
+      // 组合显示车型和车牌，如"金箭·京A12345"
+      vehicleInfoEl.textContent = `${model}·${plate}`;
+      showQRCode(car["二维码"] || "", "#4a90e2");
     }
 
     function showVehicleState() {
-      carInfo.classList.remove("hidden");
-      progressContainer.classList.remove("hidden");
+      vehicleInfoEl.classList.remove("hidden");
+      progressBar.classList.remove("hidden");
+      tipEl.classList.remove("hidden");
       errorTipEl.classList.add("hidden");
     }
 
     function showErrorState() {
-      carInfo.classList.add("hidden");
-      progressContainer.classList.add("hidden");
+      vehicleInfoEl.classList.add("hidden");
+      progressBar.classList.add("hidden");
+      tipEl.classList.add("hidden");
       errorTipEl.classList.remove("hidden");
-      showQRCode(wechatQr, "#000000"); // 黑色二维码
+      showQRCode(wechatQr, "#000000");
       clearInterval(switchIntervalId);
     }
 
@@ -180,7 +150,6 @@
     }
 
     function restartProgressBar() {
-      const progressBar = document.querySelector(".progress-bar");
       progressBar.style.animation = "none";
       void progressBar.offsetWidth;
       progressBar.style.animation = "countdown 10s linear forwards";
@@ -195,7 +164,7 @@
     }
 
     // 初始状态
-    showErrorState(); // 初始显示错误状态（黑色二维码+提示）
+    showErrorState();
     
     // 开始获取数据
     fetchCars();
