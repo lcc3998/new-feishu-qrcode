@@ -15,7 +15,7 @@ async function fetchCars() {
 
     cars = json.data.items
       .map(item => item.fields)
-      .filter(item => item.状态 === "空闲中");
+      .filter(item => item.车辆状态 === "空闲中");
 
     if (cars.length === 0) {
       plateEl.textContent = "暂无空闲车辆";
