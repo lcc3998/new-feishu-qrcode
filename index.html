@@ -10,8 +10,8 @@
     font-family: "Microsoft YaHei", Arial, sans-serif;
     background: #f9fbfd;
     display: flex;
-    justify-content: center; /* 水平居中 */
-    align-items: center;     /* 竖直居中 */
+    justify-content: center; /* 水平居中整个页面 */
+    align-items: center;     /* 竖直居中整个页面 */
   }
   #container {
     width: 280px;
@@ -50,10 +50,29 @@
     margin-bottom: 24px;
   }
   #qrcode {
-    margin: 0 auto;
+    margin: 0 auto 16px auto;
     width: 240px !important;
     height: 240px !important;
   }
+
+  /* 进度条外框，和二维码一样宽，居中 */
+  #progress-bar-container {
+    width: 240px;
+    height: 8px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0 auto 16px auto;
+  }
+  /* 进度条实际进度，从右往左缩减 */
+  #progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #42a5f5, #1e88e5);
+    transform-origin: right center; /* 缩放基准点右边 */
+    transform: scaleX(1);
+    transition: transform 0.3s linear;
+  }
+
   /* 加载动画 */
   #loading {
     display: flex;
@@ -104,6 +123,9 @@
       <div id="plate"></div>
       <div id="tip">支付宝扫码有机会免押</div>
       <div id="qrcode"></div>
+      <div id="progress-bar-container">
+        <div id="progress-bar"></div>
+      </div>
     </div>
 
     <div id="no-car" style="display:none;">
@@ -117,11 +139,10 @@
   const loadingEl = document.getElementById("loading");
   const contentEl = document.getElementById("content");
   const noCarEl = document.getElementById("no-car");
-  const container = document.getElementById("container");
-
   const modelEl = document.getElementById("model");
   const plateEl = document.getElementById("plate");
   const tipEl = document.getElementById("tip");
+  const progressBar = document.getElementById("progress-bar");
 
   // 两个二维码容器，避免冲突
   const qrcodeContent = contentEl.querySelector("#qrcode");
@@ -132,11 +153,14 @@
   let cars = [];
   let currentIndex = 0;
   let switchIntervalId = null;
+  let progressIntervalId = null;
+  let progress = 1; // 进度1表示满，0表示空
 
   function showLoading() {
     loadingEl.style.display = "flex";
     contentEl.style.display = "none";
     noCarEl.style.display = "none";
+    clearIntervals();
   }
   function showContent() {
     loadingEl.style.display = "none";
@@ -147,6 +171,12 @@
     loadingEl.style.display = "none";
     contentEl.style.display = "none";
     noCarEl.style.display = "block";
+    clearIntervals();
+  }
+
+  function clearIntervals() {
+    if (switchIntervalId) clearInterval(switchIntervalId);
+    if (progressIntervalId) clearInterval(progressIntervalId);
   }
 
   async function fetchCars() {
@@ -161,25 +191,25 @@
       if (cars.length === 0) {
         showNoCar();
         renderQRCode(wechatQrUrl, qrcodeNoCar);
-        clearInterval(switchIntervalId);
         return;
       }
 
       currentIndex = 0;
       showContent();
       showCar(cars[currentIndex]);
+      startProgress();
 
-      clearInterval(switchIntervalId);
+      clearIntervals();
       switchIntervalId = setInterval(() => {
         currentIndex = (currentIndex + 1) % cars.length;
         showCar(cars[currentIndex]);
+        startProgress();
       }, 10000);
 
     } catch(e) {
       console.error(e);
       showNoCar();
       renderQRCode(wechatQrUrl, qrcodeNoCar);
-      clearInterval(switchIntervalId);
     }
   }
 
@@ -209,6 +239,26 @@
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
+  }
+
+  function startProgress() {
+    progress = 1;
+    progressBar.style.transform = 'scaleX(1)';
+    if(progressIntervalId) clearInterval(progressIntervalId);
+
+    // 进度条持续10秒，从右到左缩减scaleX从1到0
+    const duration = 10000;
+    const stepTime = 100;
+    const steps = duration / stepTime;
+    let currentStep = 0;
+
+    progressIntervalId = setInterval(() => {
+      currentStep++;
+      progress = 1 - currentStep / steps;
+      if(progress < 0) progress = 0;
+      progressBar.style.transform = `scaleX(${progress.toFixed(3)})`;
+      if (progress <= 0) clearInterval(progressIntervalId);
+    }, stepTime);
   }
 
   fetchCars();
