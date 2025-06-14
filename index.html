@@ -27,20 +27,21 @@
       margin-bottom: 20px;
     }
 
-    #qrcode {
-      width: 240px;
-      height: 240px;
-    }
+#qrcode {
+  width: 240px;
+  height: 240px;
+  margin-bottom: 8px;
+}
 
-    .progress-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      height: 4px;
-      background: #4caf50;
-      animation: countdown 10s linear infinite;
-      width: 100%;
-    }
+.progress-bar {
+  height: 4px;
+  background: #4caf50;
+  width: 240px;
+  animation: countdown 10s linear infinite;
+  border-radius: 2px;
+  margin: 0 auto;
+  position: relative;
+}
 
     @keyframes countdown {
       from { width: 100%; }
