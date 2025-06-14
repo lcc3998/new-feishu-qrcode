@@ -12,58 +12,70 @@
 
     body {
       font-family: "Microsoft YaHei", Arial, sans-serif;
-      background: #ffffff;
+      background: #f5f8fa;
       height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
       flex-direction: column;
-    }
-
-    #plate {
-      font-size: 32px;
-      font-weight: 700;
-      color: #004080;
-      padding: 12px 28px;
-      border: 2px solid #007acc;
-      border-radius: 12px;
-      box-shadow: 0 4px 8px rgba(0, 122, 204, 0.3);
-      margin-bottom: 16px;
-      user-select: none;
+      color: #333;
     }
 
     #carType {
       font-size: 18px;
-      color: #007acc;
-      margin-bottom: 24px;
+      color: #4a90e2;
+      font-weight: 500;
+      margin-bottom: 6px;
+      letter-spacing: 1px;
+      user-select: none;
+    }
+
+    #plate {
+      font-size: 26px;
       font-weight: 600;
+      color: #1a1a1a;
+      padding: 8px 20px;
+      border: 1.5px solid #4a90e2;
+      border-radius: 30px;
+      background: #ffffff;
+      box-shadow: 0 2px 6px rgb(74 144 226 / 0.2);
+      letter-spacing: 3px;
+      user-select: none;
+      margin-bottom: 20px;
+      min-width: 180px;
+      text-align: center;
     }
 
     #tip {
       font-size: 16px;
-      color: #007acc;
-      margin-top: 16px;
+      color: #4a90e2;
+      margin-top: 12px;
       user-select: none;
+      font-weight: 500;
     }
 
     #qrcode {
       width: 240px;
       height: 240px;
+      background: white;
+      padding: 12px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgb(74 144 226 / 0.15);
       margin-bottom: 8px;
     }
 
     .progress-bar-container {
       width: 240px;
-      height: 4px;
-      background: #e0e0e0;
-      border-radius: 2px;
+      height: 5px;
+      background: #d9e7ff;
+      border-radius: 3px;
       overflow: hidden;
       margin-bottom: 24px;
     }
 
     .progress-bar {
       height: 100%;
-      background: #007acc;
+      background: #4a90e2;
       animation: countdownWidth 10s linear infinite;
       transform-origin: right;
     }
@@ -93,11 +105,11 @@
     const qrcodeEl = document.getElementById("qrcode");
     const progressBar = document.querySelector(".progress-bar");
     const carTypeEl = document.getElementById("carType");
+    const tip = document.getElementById("tip");
 
     let cars = [];
     let currentIndex = 0;
     let switchIntervalId = null;
-    let fetchIntervalId = null;
 
     async function fetchCars() {
       try {
@@ -128,7 +140,6 @@
           showCar(cars[currentIndex]);
         }, 10000);
 
-        // 显示提示文字
         tip.textContent = "支付宝扫码有机会免押";
         progressBar.style.display = "block";
 
@@ -145,10 +156,10 @@
       carTypeEl.textContent = car["车型"] || "";
       qrcodeEl.innerHTML = "";
       new QRCode(qrcodeEl, {
-        text: car["二维码"] || "",
+        text: car["二维码链接"] || "",
         width: 240,
         height: 240,
-        colorDark: "#007acc",   // 蓝色二维码
+        colorDark: "#4a90e2",   // 蓝色
         colorLight: "#ffffff"
       });
     }
@@ -168,9 +179,7 @@
     }
 
     fetchCars();
-    fetchIntervalId = setInterval(() => {
-      fetchCars();
-    }, 30000);
+    setInterval(fetchCars, 30000);
   </script>
 </body>
 </html>
