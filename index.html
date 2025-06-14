@@ -21,10 +21,13 @@
     }
     #vehicle-info {
       font-size: 24px;
-      font-weight: 600;
+      font-weight: 700; /* 加粗字体 */
       color: #003366;
       margin-bottom: 20px;
       text-align: center;
+    }
+    #plate {
+      letter-spacing: 2px; /* 增加车牌字间距 */
     }
     #qrcode {
       width: 260px;
@@ -33,18 +36,18 @@
       padding: 12px;
     }
     .progress-bar {
-      width: 260px; /* 与二维码同宽 */
+      width: 260px;
       height: 4px;
       background: #4a90e2;
       transform-origin: right;
       animation: countdown 10s linear infinite forwards;
-      margin-top: 8px; /* 缩小与二维码的距离 */
+      margin-top: 8px;
     }
     #tip {
       font-size: 16px;
       color: #1a73e8;
       font-weight: 600;
-      margin-top: 12px; /* 缩小与进度条的距离 */
+      margin-top: 12px;
       text-align: center;
     }
     #error-tip {
@@ -57,7 +60,7 @@
     .loading-dots {
       display: flex;
       justify-content: center;
-      margin-top: 16px;
+      margin-top: 12px;
     }
     .loading-dots span {
       display: inline-block;
@@ -75,7 +78,7 @@
       animation-delay: -0.16s;
     }
     @keyframes countdown {
-      from { width: 260px; } /* 起始值与二维码同宽 */
+      from { width: 260px; }
       to { width: 0%; }
     }
     @keyframes bounce {
@@ -97,7 +100,7 @@
   <div id="error-tip" class="hidden">
     <div>可能暂无可租车辆</div>
     <div>请联系微信客服获得帮助</div>
-    <div class="loading-dots hidden">
+    <div class="loading-dots">
       <span></span>
       <span></span>
       <span></span>
@@ -158,7 +161,7 @@
     function showCar(car) {
       const model = car["车型"] || "未知车型";
       const plate = car["车牌号"] || "未知车牌";
-      vehicleInfoEl.textContent = `${model}·${plate}`;
+      vehicleInfoEl.innerHTML = `${model}·<span id="plate">${plate}</span>`;
       showQRCode(car["二维码"] || "", "#4a90e2");
     }
 
@@ -167,7 +170,6 @@
       progressBar.classList.remove("hidden");
       tipEl.classList.remove("hidden");
       errorTipEl.classList.add("hidden");
-      loadingDots.classList.add("hidden");
     }
 
     function showErrorState() {
@@ -175,7 +177,6 @@
       progressBar.classList.add("hidden");
       tipEl.classList.add("hidden");
       errorTipEl.classList.remove("hidden");
-      loadingDots.classList.add("hidden");
       showQRCode(wechatQr, "#000000");
       clearInterval(switchIntervalId);
     }
@@ -185,7 +186,6 @@
       progressBar.classList.add("hidden");
       tipEl.classList.add("hidden");
       errorTipEl.classList.remove("hidden");
-      loadingDots.classList.remove("hidden");
       showQRCode(wechatQr, "#000000");
     }
 
