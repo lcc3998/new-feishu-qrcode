@@ -21,85 +21,78 @@
     }
 
     #plate {
-      font-size: 28px;
-      font-weight: bold;
-      color: #000;
-      margin-bottom: 6px;
-      text-align: center;
+      font-size: 32px;
+      font-weight: 700;
+      color: #004080;
+      padding: 12px 28px;
+      border: 2px solid #007acc;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0, 122, 204, 0.3);
+      margin-bottom: 16px;
+      user-select: none;
     }
 
-    #model {
+    #carType {
       font-size: 18px;
-      color: #555;
-      margin-bottom: 20px;
-      text-align: center;
+      color: #007acc;
+      margin-bottom: 24px;
+      font-weight: 600;
+    }
+
+    #tip {
+      font-size: 16px;
+      color: #007acc;
+      margin-top: 16px;
+      user-select: none;
     }
 
     #qrcode {
       width: 240px;
       height: 240px;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
 
-    #tip {
-      font-size: 14px;
-      color: #666;
-      margin-top: 8px;
-      text-align: center;
-    }
-
-    /* 进度条容器固定宽高，方便绝对定位 */
     .progress-bar-container {
-      position: relative;
       width: 240px;
       height: 4px;
-      background: #eee;
+      background: #e0e0e0;
       border-radius: 2px;
       overflow: hidden;
-      margin-bottom: 10px;
+      margin-bottom: 24px;
     }
 
-    /* 进度条本体 */
-.progress-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%;
-  background: #4caf50;
-  border-radius: 2px;
-  animation: countdownWidth 10s linear infinite;
-}
+    .progress-bar {
+      height: 100%;
+      background: #007acc;
+      animation: countdownWidth 10s linear infinite;
+      transform-origin: right;
+    }
 
-@keyframes countdownWidth {
-  from {
-    width: 100%;
-  }
-  to {
-    width: 0%;
-  }
-}
+    @keyframes countdownWidth {
+      from {
+        width: 100%;
+      }
+      to {
+        width: 0%;
+      }
+    }
   </style>
 </head>
 <body>
+  <div id="carType"></div>
   <div id="plate">加载中...</div>
-  <div id="model"></div>
   <div id="qrcode"></div>
+  <div id="tip">支付宝扫码有机会免押</div>
   <div class="progress-bar-container">
     <div class="progress-bar"></div>
   </div>
-  <div id="tip"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
   <script>
     const plateEl = document.getElementById("plate");
-    const modelEl = document.getElementById("model");
     const qrcodeEl = document.getElementById("qrcode");
     const progressBar = document.querySelector(".progress-bar");
-    const progressBarContainer = document.querySelector(".progress-bar-container");
-    const tipEl = document.getElementById("tip");
-
-    const wechatQRCode = "https://u.wechat.com/MBszg0Yw7m4Zplm0k9LkoCE";
+    const carTypeEl = document.getElementById("carType");
 
     let cars = [];
     let currentIndex = 0;
@@ -115,8 +108,11 @@
         cars = shuffleArray(rawCars);
 
         if (cars.length === 0) {
-          // 没车，显示客服微信二维码和提示
-          showWechatCustomer();
+          plateEl.textContent = "";
+          carTypeEl.textContent = "";
+          qrcodeEl.innerHTML = "";
+          tip.textContent = "可能暂无可租车辆，请联系微信客服。";
+          progressBar.style.display = "none";
           clearInterval(switchIntervalId);
           return;
         }
@@ -132,45 +128,34 @@
           showCar(cars[currentIndex]);
         }, 10000);
 
+        // 显示提示文字
+        tip.textContent = "支付宝扫码有机会免押";
+        progressBar.style.display = "block";
+
       } catch (err) {
         plateEl.textContent = "获取数据失败";
-        modelEl.textContent = "";
+        carTypeEl.textContent = "";
         qrcodeEl.innerHTML = "";
-        tipEl.textContent = "";
-        progressBarContainer.style.display = "none";
         console.error(err);
       }
     }
 
     function showCar(car) {
       plateEl.textContent = car["车牌号"] || "未知车牌";
-      modelEl.textContent = car["车型"] || "";
-      tipEl.textContent = "支付宝扫码可免押";
+      carTypeEl.textContent = car["车型"] || "";
       qrcodeEl.innerHTML = "";
       new QRCode(qrcodeEl, {
         text: car["二维码"] || "",
         width: 240,
-        height: 240
+        height: 240,
+        colorDark: "#007acc",   // 蓝色二维码
+        colorLight: "#ffffff"
       });
-      progressBarContainer.style.display = "block";
-    }
-
-    function showWechatCustomer() {
-      plateEl.textContent = "";
-      modelEl.textContent = "";
-      tipEl.textContent = "可能暂无可租车辆，请联系微信客服。";
-      qrcodeEl.innerHTML = "";
-      new QRCode(qrcodeEl, {
-        text: wechatQRCode,
-        width: 240,
-        height: 240
-      });
-      progressBarContainer.style.display = "none";
     }
 
     function restartProgressBar() {
       progressBar.style.animation = "none";
-      void progressBar.offsetWidth; // 触发重绘
+      void progressBar.offsetWidth;
       progressBar.style.animation = "countdownWidth 10s linear infinite";
     }
 
