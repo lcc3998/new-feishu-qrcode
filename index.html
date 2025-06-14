@@ -4,72 +4,42 @@
   <meta charset="UTF-8" />
   <title>车辆二维码展示</title>
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       font-family: "Microsoft YaHei", Arial, sans-serif;
-      background: linear-gradient(to right, #f0f2f5, #dceefb);
-      margin: 0;
+      background: #ffffff;
       height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-    }
-
-    #container {
-      background: white;
-      padding: 30px 20px;
-      border-radius: 16px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-      text-align: center;
-      width: 320px;
-      position: relative;
-    }
-
-    .brand {
-      margin-bottom: 12px;
-    }
-
-    .brand-line1 {
-      font-size: 20px;
-      font-weight: bold;
-      color: #333;
-    }
-
-    .brand-line2 {
-      font-size: 16px;
-      color: #555;
-      margin-top: 4px;
+      flex-direction: column;
     }
 
     #plate {
-      font-size: 22px;
+      font-size: 28px;
       font-weight: bold;
-      background: #eef4ff;
-      display: inline-block;
-      padding: 8px 16px;
-      border-radius: 12px;
-      color: #3366cc;
-      margin-bottom: 16px;
+      color: #000;
+      margin-bottom: 20px;
     }
 
     #qrcode {
-      margin: 0 auto 10px;
-      width: 200px;
-      height: 200px;
-    }
-
-    #tip {
-      font-size: 14px;
-      color: #666;
-      margin-top: 6px;
+      width: 240px;
+      height: 240px;
     }
 
     .progress-bar {
-      position: absolute;
+      position: fixed;
       bottom: 0;
       left: 0;
       height: 4px;
       background: #4caf50;
       animation: countdown 10s linear infinite;
+      width: 100%;
     }
 
     @keyframes countdown {
@@ -79,16 +49,9 @@
   </style>
 </head>
 <body>
-  <div id="container">
-    <div class="brand">
-      <div class="brand-line1">驴崽 x 哈啰</div>
-      <div class="brand-line2">🛵租电动车</div>
-    </div>
-    <div id="plate">加载中...</div>
-    <div id="qrcode"></div>
-    <div id="tip">支付宝扫码可免押</div>
-    <div class="progress-bar"></div>
-  </div>
+  <div id="plate">加载中...</div>
+  <div id="qrcode"></div>
+  <div class="progress-bar"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs/qrcode.min.js"></script>
   <script>
@@ -106,7 +69,6 @@
         const res = await fetch("/api/vehicle?status=空闲中");
         const json = await res.json();
 
-        // 获取车辆并随机排序
         const rawCars = json?.data?.items.map(item => item.fields) || [];
         cars = shuffleArray(rawCars);
 
@@ -136,24 +98,23 @@
     }
 
     function showCar(car) {
-      plateEl.textContent = "车牌号：" + car.车牌;
+      plateEl.textContent = car["车牌号"] || "未知车牌";
       qrcodeEl.innerHTML = "";
       new QRCode(qrcodeEl, {
-        text: car.二维码,
-        width: 200,
-        height: 200
+        text: car["二维码链接"] || "",
+        width: 240,
+        height: 240
       });
     }
 
     function restartProgressBar() {
       progressBar.style.display = "block";
       progressBar.style.animation = "none";
-      void progressBar.offsetWidth; // 强制触发重绘
+      void progressBar.offsetWidth;
       progressBar.style.animation = "countdown 10s linear infinite";
     }
 
     function shuffleArray(array) {
-      // 洗牌算法
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [array[i], array[j]] = [array[j], array[i]];
@@ -161,10 +122,7 @@
       return array;
     }
 
-    // 初始化加载
     fetchCars();
-
-    // 每30秒刷新一次数据
     fetchIntervalId = setInterval(() => {
       fetchCars();
     }, 30000);
