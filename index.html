@@ -11,29 +11,17 @@
     }
     body {
       font-family: "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-      background: #f5f7fa;
+      background: #fff;
       height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
       flex-direction: column;
-      padding: 20px;
       color: #333;
-    }
-    .container {
-      background: #fff;
-      border-radius: 16px;
-      padding: 32px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-      width: 100%;
-      max-width: 420px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
     }
     #car-info {
       text-align: center;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       width: 100%;
     }
     #model {
@@ -41,7 +29,6 @@
       color: #333;
       font-weight: 600;
       margin-bottom: 12px;
-      letter-spacing: 1px;
     }
     #plate {
       display: inline-block;
@@ -52,88 +39,54 @@
       border-radius: 8px;
       padding: 8px 20px;
       letter-spacing: 6px;
-      box-shadow: 0 4px 12px rgba(0, 51, 102, 0.15);
-      user-select: none;
       margin-bottom: 16px;
       min-width: 180px;
-      background: #fff;
-      transition: all 0.3s ease;
-    }
-    #plate:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0, 51, 102, 0.2);
     }
     #tip {
       font-size: 16px;
       color: #1a73e8;
       font-weight: 600;
       margin-top: 16px;
-      user-select: none;
-      padding: 8px 16px;
-      background: rgba(26, 115, 232, 0.1);
-      border-radius: 20px;
-      display: inline-block;
     }
     #qrcode {
       width: 260px;
       height: 260px;
       margin: 0 auto;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-      border-radius: 16px;
-      background: #fff;
       padding: 12px;
-      transition: all 0.3s ease;
-    }
-    #qrcode:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
     }
     .progress-container {
       width: 260px;
       height: 8px;
       background: #e0e5eb;
       border-radius: 4px;
-      margin-top: 24px;
+      margin-top: 20px;
       overflow: hidden;
-      user-select: none;
-      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
     }
     .progress-bar {
       height: 100%;
-      background: linear-gradient(90deg, #4a90e2, #6bb1ff);
+      background: #4a90e2;
       transform-origin: right;
       animation: countdown 10s linear infinite forwards;
       width: 100%;
-      border-radius: 4px;
     }
     @keyframes countdown {
       from { width: 100%; }
       to { width: 0%; }
     }
-    .loading-text {
-      font-size: 18px;
-      color: #666;
-      margin-bottom: 24px;
-    }
-    .no-vehicle .progress-container {
-      display: none;
-    }
-    .no-vehicle #plate {
-      display: none;
+    .hidden {
+      display: none !important;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div id="car-info">
-      <div id="model" class="loading-text">正在加载车辆信息...</div>
-      <div id="plate"></div>
-      <div id="tip"></div>
-    </div>
-    <div id="qrcode"></div>
-    <div class="progress-container">
-      <div class="progress-bar"></div>
-    </div>
+  <div id="car-info" class="hidden">
+    <div id="model"></div>
+    <div id="plate"></div>
+    <div id="tip"></div>
+  </div>
+  <div id="qrcode"></div>
+  <div class="progress-container hidden">
+    <div class="progress-bar"></div>
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -142,8 +95,8 @@
     const modelEl = document.getElementById("model");
     const tipEl = document.getElementById("tip");
     const qrcodeEl = document.getElementById("qrcode");
-    const progressBar = document.querySelector(".progress-bar");
-    const container = document.querySelector(".container");
+    const progressContainer = document.querySelector(".progress-container");
+    const carInfo = document.getElementById("car-info");
 
     const wechatQr = "https://u.wechat.com/MBszg0Yw7m4Zplm0k9LkoCE";
 
@@ -151,11 +104,6 @@
     let currentIndex = 0;
     let switchIntervalId = null;
     let fetchIntervalId = null;
-
-    // 初始化状态
-    modelEl.textContent = "正在加载车辆信息...";
-    modelEl.className = "loading-text";
-    tipEl.textContent = "";
 
     async function fetchCars() {
       try {
@@ -166,19 +114,17 @@
         cars = shuffleArray(rawCars);
 
         if (cars.length === 0) {
-          // 无车状态
-          container.classList.add("no-vehicle");
-          modelEl.textContent = "暂无可租车辆";
-          modelEl.className = "";
-          plateEl.textContent = "";
-          tipEl.textContent = "请联系微信客服";
-          showQRCode(wechatQr, "#000000"); // 黑色二维码
+          // 无车状态：只显示黑色二维码
+          carInfo.classList.add("hidden");
+          progressContainer.classList.add("hidden");
+          showQRCode(wechatQr, "#000000");
           clearInterval(switchIntervalId);
           return;
         }
 
         // 有车状态
-        container.classList.remove("no-vehicle");
+        carInfo.classList.remove("hidden");
+        progressContainer.classList.remove("hidden");
         currentIndex = 0;
         showCar(cars[currentIndex]);
         restartProgressBar();
@@ -190,13 +136,10 @@
           restartProgressBar();
         }, 10000);
       } catch (err) {
-        // 错误状态
-        container.classList.add("no-vehicle");
-        modelEl.textContent = "获取数据失败";
-        modelEl.className = "";
-        plateEl.textContent = "";
-        tipEl.textContent = "请稍后再试";
-        showQRCode(wechatQr, "#000000"); // 黑色二维码
+        // 错误状态：只显示黑色二维码
+        carInfo.classList.add("hidden");
+        progressContainer.classList.add("hidden");
+        showQRCode(wechatQr, "#000000");
         console.error(err);
         clearInterval(switchIntervalId);
       }
@@ -204,11 +147,9 @@
 
     function showCar(car) {
       modelEl.textContent = car["车型"] || "未知车型";
-      modelEl.className = "";
       plateEl.textContent = car["车牌号"] || "未知车牌";
       tipEl.textContent = "支付宝扫码有机会免押";
-
-      showQRCode(car["二维码"] || "", "#4a90e2"); // 蓝色二维码
+      showQRCode(car["二维码"] || "", "#4a90e2");
     }
 
     function showQRCode(text, colorDark = "#4a90e2") {
