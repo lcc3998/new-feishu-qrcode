@@ -101,7 +101,7 @@
       plateEl.textContent = car["车牌号"] || "未知车牌";
       qrcodeEl.innerHTML = "";
       new QRCode(qrcodeEl, {
-        text: car["二维码链接"] || "",
+        text: car["二维码"] || "",
         width: 240,
         height: 240
       });
